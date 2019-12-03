@@ -1,0 +1,46 @@
+缴费类型(CashType)码表
+OWN_CASHIER(1, "自主收银台")
+OUT_CASHIER(2, "外部收银台")
+PRE_DEPOSIT(3, "预存款")[默认用户或商户已付款-默认核销]
+POST_SETTLEMENT(4, "后结")
+COMPANY_COST(5, "国泰成本")[公司机构代替用户付款-默认核销]
+ZERO_FEE(9, "非涉费类型")[不涉及费用支出-默认核销]
+
+核销类型(WriteOffStatus)码表
+UNWRITEOFF(Integer.valueOf(0), "未核销")
+WRITEOFFED(Integer.valueOf(1), "已核销")
+PARTWRITEOFF(Integer.valueOf(2), "部分核销")
+
+---------------------------------------------------------------------------------------------
+
+athena模型:330账单中心
+分期账单(多笔), 非分期账单(一笔)
+t_fin_biz_bill(账单表)
+    该表对应业务单据(如:保单,批单,理赔单,追偿单), 分期情况下记录的金额是每一期还款计划的金额, 非分期情况下记录的金额是业务单金额
+t_fin_biz_bill_detail(账单明细表)
+    该表是[账单表]的明细拆分, 有6中缴费类型, 只有后结(4)需要通过关联其他表获取核销状态, 收付账号信息; 可以体现账单的缴费详情
+
+athena模型:330结算中心(针对后结缴费产品)
+t_fin_settle_bill_detail_day_clear(账单明细日清表-不分区)
+    该表是按日统计产品/方案,渠道平台等维度下的[账单明细表]金额, 笔数等数据, 用于结算; 有核销标识, 用于体现缴费情况
+t_fin_settle_order(结算单表-不分区)
+    该表是[日清]的父表, 1:N(日清)关系, 有整体核销情况 
+t_fin_settle_order_pay_info(结算单支付信息表-关联结算单-不分区)
+    该表是结算单[关联表], 体现结算的收付账号信息, 账号类型等
+
+---------------------------------------------------------------------------------------------
+
+1.获取账单是否全部缴费
+select b.bill_no, b.trade_cd, b.is_stage, bd.bill_detail_no, bd.cash_type_cd, bd.payee_account_type_cd, bd.payer_account_type_cd,
+	case when bd.cash_type_cd = 4 then if(bdc.writeoff_status_cd=1, 1, 0)
+	else is_writeoff end as is_writeoff
+ from `t_fin_biz_bill` b, `t_fin_biz_bill_detail` bd, `t_fin_settle_bill_detail_day_clear` bdc
+where b.bill_no = bd.bill_no and bd.bill_detail_day_clear_no = bdc.bill_detail_day_clear_no;
+
+is_writeoff 1的时候才报送，0的时候不报送
+找欣蔚那边确认下这个表是否有时间？？
+
+trade_cd
+保单收费：010100  t_fin_biz_policy
+批改 t_fin_biz_endor
+理赔 t_fin_biz_claim

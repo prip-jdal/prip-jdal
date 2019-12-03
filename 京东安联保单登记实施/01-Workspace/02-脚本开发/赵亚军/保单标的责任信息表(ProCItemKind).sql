@@ -1,0 +1,86 @@
+ora_db=$1
+user_name=$2
+user_pwd=$3
+log_file=$4
+
+sqlplus ${user_name}/${user_pwd}@${ora_db}<<!
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+set timing on;
+spool ${log_file}
+
+ALTER SESSION ENABLE PARALLEL DML;
+
+INSERT /*+ append PARALLEL(16) */
+INTO MID_ProCItemKind
+
+select 
+000000' as TRANSACTIONNO ,
+000000' as COMPANYCODE ,
+prpck.POLICYNO as POLICYNO ,
+prpck.ItemKindNo as ITEMKINDNO ,
+null as INSUREDNO ,
+null as GROUPNO ,
+prpck.RISKCODE as RISKCODE ,
+prpck.CLAUSECODE as CLAUSECODE ,
+prpck.KINDCODE as KINDCODE ,
+prpck.KINDNAME as KINDNAME ,
+null as ITEMKINDCODE ,
+prpck.CALCULATEIND as CALCULATEFLAG ,
+prpck.ITEMNO as ITEMNO ,
+prpck.ITEMCODE as ITEMTYPECODE ,
+prpck.ITEMDETAILLIST as ITEMDETAILNAME ,
+prpck.STARTDATE as STARTTIME ,
+prpck.ENDDATE as ENDTIME ,
+prpck.CURRENCY as ITEMCURRENCY ,
+prpck.QUANTITY as ITEMQUANTITY ,
+prpck.UNIT as UNIT ,
+prpck.CURRENCY as UNITVALUEORIGCUR ,
+null as UNITVALUEORIG ,
+null as UNITVALUE ,
+prpck.CURRENCY as VALUEORIGCUR ,
+prpck.SUMINSURED as VALUEORIG ,
+prpck.SUMVALUE as VALUE ,
+prpck.AMOUNTABASIS as VALUESURECODE ,
+prpck.amountAbasisVal as VALUESURENAME ,
+prpck.CURRENCY as UNITAMOUNTORIGCUR ,
+PRP_prpck.UNITAMOUNT as UNITAMOUNTORIG ,
+null as UNITAMOUNT ,
+prpck.CURRENCY as AMOUNTORIGCUR ,
+null as AMOUNTORIG ,
+null as AMOUNT ,
+prpck.RATE as RATE ,
+prpck.SHORTRATEFLAG as SHORTRATEFLAG ,
+null as SHORTRATE ,
+prpck.CURRENCY as PREMIUMORIGCUR ,
+prpck.GROSSPREMIUM as PREMIUMORIG ,
+prpck.NOVATGROSSPREMIUM as PREMIUM ,
+null as SUMTAXFEEORIG ,
+null as TAXFEE ,
+prpck.NETPREMIUM as SUMNETPREMIUMORIG ,
+prpck.noVatGrossPremium1 as NETPREMIUM ,
+prpck.QUANTITY as COPIES ,
+prpck.CURRENCY as EVERYONEAMOUNTORIGCUR ,
+null as EVERYONEAMOUNTORIG ,
+prpck.unitAmount as EVERYONEAMOUNT ,
+prpck.CURRENCY as UNITPREMIUMORIGCUR ,
+null as UNITPREMIUMORIG , 
+prpck.unitGrossPremium2 as UNITPREMIUM ,
+null as ALLOWANCEFLAG ,
+prpck.CURRENCY as DAILYALLOWANCEAMTORIGCUR ,
+null as DAILYALLOWANCEAMTORIG ,
+prpck.DailyAllowance as DAILYALLOWANCEAMNT ,
+prpck.CURRENCY as CURRENCY3 ,
+null as EXCHANGE3 ,
+null as AMOUNT3 ,
+null as PREMIUM3 ,
+null as CURRENCY2 ,
+null as EXCHANGE2 ,
+null as PREMIUM2 ,
+null as AMOUNT2 ,
+000000' as TRANSACTIONDATE ,
+000000' as BATCHNO   
+ from prpCitemKind prpck;
+commit;
+
+spool off
+!

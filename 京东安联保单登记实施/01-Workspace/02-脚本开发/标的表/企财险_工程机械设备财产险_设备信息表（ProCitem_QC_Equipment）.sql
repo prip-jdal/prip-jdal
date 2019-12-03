@@ -1,0 +1,52 @@
+ora_db=$1
+user_name=$2
+user_pwd=$3
+log_file=$4
+
+sqlplus ${user_name}/${user_pwd}@${ora_db}<<!
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+set timing on;
+spool ${log_file}
+
+ALTER SESSION ENABLE PARALLEL DML;
+
+INSERT /*+ append PARALLEL(16) */
+INTO MID_PROCITEM_QC_EQUIPMENT
+
+SELECT /*+ PARALLEL(16) */
+
+'000000' AS TRANSACTIONNO ,
+'000000' AS COMPANYCODE ,
+citemproperty.policyno AS POLICYNO ,
+citemproperty.ItemNo AS ITEMNO ,
+cmain.RISKCODE AS RISKCODE ,
+citemproperty.ItemTypeCode AS ITEMTYPECODE ,
+'000000' AS MECNAME ,
+'000000' AS MECBRANDNAME ,
+'000000' AS MECCODE ,
+'000000' AS MECUSEAREA ,
+'1990-01-01' AS PRODUCTDATE ,
+'1990-01-01' AS REGDATE ,
+1 AS MECUSEYEAR ,
+1 AS MECDESIGNUSEYEAR ,
+'000000' AS PRODUCTIVEPLACE ,
+'000000' AS MANUFACFURER ,
+'000000' AS BRANDCARMODE ,
+1 AS DEADWEIGHTTONNAGE ,
+'000000' AS VINNOMACHINENO ,
+'000000' AS ENGINENO ,
+'000000' AS VEHICLETYPECODE ,
+'000000' AS BUYPRICEORIGCUR ,
+1 AS BUYPRICEORIG ,
+1 AS BUYPRICE ,
+1 AS DEPRECIATIONRATE ,
+'1990-01-01' AS TRANSACTIONDATE ,
+'000000' AS BATCHNO
+
+FROM fccbdb.ods_p_prpcitemproperty citemproperty
+left join fccbdb.ods_p_prpcmain cmain on cmain.policyno=citemproperty.policyno
+ 
+commit;
+
+spool off
+!

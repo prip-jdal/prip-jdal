@@ -1,0 +1,65 @@
+ora_db=$1
+user_name=$2
+user_pwd=$3
+log_file=$4
+
+sqlplus ${user_name}/${user_pwd}@${ora_db}<<!
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+set timing on;
+spool ${log_file}
+
+ALTER SESSION ENABLE PARALLEL DML;
+
+INSERT /*+ append PARALLEL(16) */
+INTO MID_PROCITEM_JC_HOUSE
+
+SELECT /*+ PARALLEL(16) */
+
+'000000' AS TRANSACTIONNO ,
+'000000' AS COMPANYCODE ,
+citemproperty.policyno AS POLICYNO ,
+citemproperty.ItemNo AS ITEMNO ,
+cmain.RISKCODE AS RISKCODE ,
+citemproperty.ItemTypeCode AS ITEMTYPECODE ,
+citemproperty.ItemAddress AS ADDRESSNO ,
+citemproperty.ItemPostalCode AS POSTCODE ,
+'000000' AS AREACODE ,
+'000000' AS COUNTRYCODE ,
+'000000' AS IHGCODE ,
+null AS HOUSENO ,
+citemproperty.Structure AS STRUCTURE ,
+'000000' AS USE_TYPE ,
+'000000' AS USE_NAME ,
+'000000' AS INCLUDE_PROPERTYFLAG ,
+'000000' AS HOUSING_TYPE ,
+'000000' AS SINGLEHOUSEFLAG ,
+'000000' AS DANGEROUSFLAG ,
+'000000' AS OUTFIREFACILITYFLAG ,
+'000000' AS PROTECTFACILITYFLAG ,
+'000000' AS FIRESYSFLAG ,
+'000000' AS GUARDWARNSYSFLAG ,
+'000000' AS LANDAGENT ,
+'000000' AS PERMITNO ,
+'000000' AS BUYCONTRACTNO ,
+null AS OWNERSHIP_NO ,
+'000000' AS FORWARD_HOUSEFLAG ,
+'1990-01-01' AS SUBMITTED_DATE ,
+null AS BUILDTIME ,
+null AS HOUSECOMPLETEDATE ,
+null AS BUILDAREA ,
+null AS BUILDSTATUS ,
+null AS ROOMNO ,
+null AS PRICE ,
+1 AS FIRSTRATE ,
+1 AS FIRSTPAID ,
+null AS SUMPRICE ,
+'000000' AS TRANSACTIONDATE ,
+'000000' AS BATCHNO
+
+FROM fccbdb.ods_p_prpcitemproperty citemproperty
+left join fccbdb.ods_p_prpcmain cmain on cmain.policyno=citemproperty.policyno
+ 
+commit;
+
+spool off
+!

@@ -1,0 +1,39 @@
+ora_db=$1
+user_name=$2
+user_pwd=$3
+log_file=$4
+
+sqlplus ${user_name}/${user_pwd}@${ora_db}<<!
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+set timing on;
+spool ${log_file}
+
+ALTER SESSION ENABLE PARALLEL DML;
+
+INSERT /*+ append PARALLEL(16) */
+INTO MID_PROCTRANSACTION
+
+SELECT /*+ PARALLEL(16) */
+
+'000000' AS TRANSACTIONNO ,
+'000000' AS BATCHNO ,
+cmain.POLICYNO AS POLICYNO ,
+null AS CASENO ,
+null AS ENDORSENO  ,
+'000000' AS COMPANYCODE ,
+cmain.PAYTIMES AS TRANSACTIONTIMES ,
+'04' AS TRANSACTIONREASON ,
+cmain.SUMPREMIUM AS TRANSACTIONFEE ,
+cmain.CURRENCY AS CURRENCY ,
+cmain.CURRENCY AS CURRENCY2 ,
+null AS EXCHANGERATE2 ,
+cmain.sumPremium1 AS PLANFEE2 ,
+'1990-01-01' AS TRANSACTIONDATE , 
+'01' AS FLAG 
+
+FROM fccbdb.prpcmain cmain
+ 
+commit;
+
+spool off
+!
